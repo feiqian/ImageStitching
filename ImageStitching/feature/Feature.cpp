@@ -8,7 +8,6 @@ Feature::Feature(Mat imageMat)
 
 	dector.detect(imageMat,this->keyPoints);
 	extractor.compute(imageMat,this->keyPoints,this->descriptor);
-	this->imageMat = imageMat;
 }
 
 pair<vector<Point2f>,vector<Point2f> > Feature::match(Feature& other)

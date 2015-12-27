@@ -1,11 +1,6 @@
 #ifndef __FEATURE_EXTRACTOR_H__
 #define __FEATURE_EXTRACTOR_H__
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/nonfree/features2d.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/stitching/stitcher.hpp>
+#include "opencv.h"
 #include <string>
 using namespace std;
 using namespace cv;
@@ -20,7 +15,6 @@ public:
 
 	vector<KeyPoint> keyPoints;
 	Mat descriptor;
-	Mat imageMat;
 private:
 
 };
