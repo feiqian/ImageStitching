@@ -5,6 +5,7 @@
 #include "util/Util.h"
 #include "feature/Feature.h"
 #include "warp/CylindricalWarper.h"
+#include "blend/MultiBandBlender.h"
 using namespace std;
 using namespace cv;
 
@@ -17,13 +18,16 @@ public:
 	
 private:
 	vector<Mat> readImageFiles(vector<string>& imageFiles);
+	void sortImages();
 	void warp();
 	void matchFeatures();
 	void showMatchFeatures();
-	void sort();
+	void blend();
+	void crop();
 
 	vector<Mat> imageMats;
 	vector<Feature> features;
+	vector<Mat> homographies;
 };
 
 

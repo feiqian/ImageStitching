@@ -10,7 +10,7 @@ vector<Mat> Sticher::readImageFiles(vector<string>& imageFiles)
 	return imageMats;
 }
 
-void Sticher::sort()
+void Sticher::sortImages()
 {
 
 }
@@ -39,21 +39,24 @@ void Sticher::warp()
 
 void Sticher::matchFeatures()
 {
-	Mat destImage;
-	for(int i=0,len=features.size();i<len-1;++i)
+	homographies.resize(features.size());
+
+	for(int i=0,len=features.size();i<len;++i)
 	{
-		Mat &leftImage = imageMats[i],&rightImage = imageMats[i+1];
-		Feature &leftFeature = features[i],&rightFeature = features[i+1];
+		Mat &leftImage = imageMats[i],&rightImage = imageMats[(i+1)%len];
+		Feature &leftFeature = features[i],&rightFeature = features[(i+1)%len];
 
 		vector<DMatch>& matches = leftFeature.match(rightFeature);
 		vector<Point2f> leftMatchPoints(matches.size());
 		vector<Point2f> rightMatchPoints(matches.size());
 
-		for(int i=0;i<matches.size();i++)
+		for(int k=0;k<matches.size();k++)
 		{
-			leftMatchPoints[i] = leftFeature.keyPoints[matches[i].queryIdx].pt;
-			rightMatchPoints[i] = rightFeature.keyPoints[matches[i].trainIdx].pt;
+			leftMatchPoints[k] = leftFeature.keyPoints[matches[k].queryIdx].pt;
+			rightMatchPoints[k] = rightFeature.keyPoints[matches[k].trainIdx].pt;
 		}
+
+		homographies[i] = findHomography(rightMatchPoints,leftMatchPoints,CV_RANSAC);
 
 		//Draw matches,for test
 		//Mat img_matches;
@@ -62,21 +65,45 @@ void Sticher::matchFeatures()
 		//	vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 		//imshow("Feature Matches", img_matches);
 		//waitKey(0);
-
-
-		Mat homography = findHomography(leftMatchPoints,rightMatchPoints,CV_RANSAC);
-
-		//TODO MultiBand
 	}
+}
+
+void Sticher::blend()
+{
+	MultiBandBlender blender;
+	for(int i=0,len=homographies.size();i<len-1;++i)
+	{
+		Mat& leftImage = imageMats[i],rightImage = imageMats[(i+1)%len];
+		int rows = leftImage.rows,cols = leftImage.cols;
+		Mat rightImageWarpped,maskMats(rows,cols,CV_8UC3,Scalar(1,1,1));
+
+		warpPerspective(rightImage, rightImageWarpped, homographies[i], Size(cols*2, rows), INTER_LINEAR);
+
+		Mat rightImageBlend(rightImageWarpped,Rect(0,0,cols,rows));
+		Mat& blendImage = blender.blend(leftImage,rightImageBlend,maskMats);
+		
+		Mat panorama = rightImageWarpped.clone();
+		Mat roi(panorama , Rect(0, 0, cols, rows));
+		blendImage.copyTo(roi);
+		imshow("Panorama", panorama);
+		waitKey(0);
+	}
+}
+
+void Sticher::crop()
+{
+
 }
 
 int Sticher::stich(vector<string>& imageFiles,string outputDir)
 {
 	readImageFiles(imageFiles);
+	sortImages();
 	extractFeatures();
 	warp();
 	matchFeatures();
-	
+	blend();
+	crop();
 
 	return 0;
 }

@@ -43,6 +43,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)include;$(ProjectDir);C:\opencv\build\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\opencv\build\x86\vc11\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -79,6 +80,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="blend\MultiBandBlender.cpp" />
     <ClCompile Include="feature\Feature.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stitch\Sticher.cpp" />
@@ -86,6 +88,7 @@
     <ClCompile Include="warp\CylindricalWarper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="blend\MultiBandBlender.h" />
     <ClInclude Include="feature\Feature.h" />
     <ClInclude Include="include\opencv.h" />
     <ClInclude Include="stitch\Sticher.h" />
