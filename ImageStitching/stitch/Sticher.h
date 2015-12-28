@@ -17,7 +17,11 @@ public:
 	
 private:
 	vector<Mat> readImageFiles(vector<string>& imageFiles);
+	void warp();
+	void matchFeatures();
+	void showMatchFeatures();
 	void sort();
+
 	vector<Mat> imageMats;
 	vector<Feature> features;
 };

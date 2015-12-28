@@ -11,7 +11,7 @@ public:
 	Feature(){};
 	Feature(Mat imageMat);
 
-	pair<vector<Point2f>,vector<Point2f> > match(Feature& other);
+	vector<DMatch> match(Feature& other);
 
 	vector<KeyPoint> keyPoints;
 	Mat descriptor;

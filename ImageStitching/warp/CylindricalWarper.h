@@ -9,12 +9,11 @@ using namespace cv;
 class CylindricalWarper
 {
 public:
-	CylindricalWarper(double radius=35):radius(radius){};
-	void backwardWarp(Mat& imageMat,Feature& features);
+	void backwardWarp(Mat& imageMat,Feature& features,double focalLength);
 private:
 	Point2d project(const Point2d& p);
 	Point2d project_reverse(const Point2d& p);
-	Vec3b bilinear_interpolate(Mat& imageMat, double x, double y);
+	Vec3b bilinear_interpolate(Mat& imageMat, double row, double col);
 
 	double radius;
 	double centerX,centerY;

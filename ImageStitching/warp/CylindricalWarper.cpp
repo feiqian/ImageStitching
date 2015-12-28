@@ -3,40 +3,43 @@
 Point2d CylindricalWarper::project(const Point2d& p)
 {
 	Point2d coord;
-	coord.x = atan((p.x-centerX)/radius);
-	coord.y = (p.y-centerY)/sqrt(pow(p.y-centerX,2)+pow(radius,2));
+	coord.x = radius*atan((p.x-centerX)/radius);
+	coord.y = radius*(p.y-centerY)/sqrt(pow(p.x-centerX,2)+pow(radius,2));
 	return coord;
 }
 
 Point2d CylindricalWarper::project_reverse(const Point2d& p)
 {
 	Point2d coord;
-	coord.x = radius*tan(p.x)+centerX;
-	coord.y = p.y*sqrt(pow(p.x-centerX,2)+pow(radius,2))+centerY;
+	double radius_inv = 1/radius;
+
+	coord.x = radius*tan(p.x*radius_inv)+centerX;
+	coord.y = p.y/cos(p.x*radius_inv) + centerY;
 	return coord;
 }
 
-Vec3b CylindricalWarper::bilinear_interpolate(Mat& imageMat, double x, double y)
+Vec3b CylindricalWarper::bilinear_interpolate(Mat& imageMat, double row, double col)
 {
-	Vec3b result;
-	int x1 = floor(x),y1 = floor(y);
-	double dx = x-x1,dy = y-dy;
+	Vec3b result(0,0,0);
+	if(row<0||row>imageMat.rows-1||col<0||col>imageMat.cols-1) return result;
 
-	if(x1==imageMat.cols-1) --x1;
-	if(y1==imageMat.rows-1) --y1;
+	int row1 = floor(row),col1 = floor(col);
+	if(row==imageMat.rows-1) --row;
+	if(col==imageMat.cols-1) --col;
 
 	Vec3b color[4];
 	Vec4d weight;
+	double dx = col-col1,dy = row-row1;
 
 	weight[0] = (1-dx)*(1-dy);
 	weight[1] = dx*(1-dy);
 	weight[2] = dx*dy;
 	weight[3] = (1-dx)*dy;
 
-	color[0] = imageMat.at<Vec3b>(x1,y1);
-	color[1] = imageMat.at<Vec3b>(x1+1,y1);
-	color[2] = imageMat.at<Vec3b>(x1+1,y1+1);
-	color[3] = imageMat.at<Vec3b>(x1,y1+1);
+	color[0] = imageMat.at<Vec3b>(row1,col1);
+	color[1] = imageMat.at<Vec3b>(row1+1,col1);
+	color[2] = imageMat.at<Vec3b>(row1+1,col1+1);
+	color[3] = imageMat.at<Vec3b>(row1,col1+1);
 
 	for(int i=0;i<4;++i)
 	{
@@ -46,12 +49,14 @@ Vec3b CylindricalWarper::bilinear_interpolate(Mat& imageMat, double x, double y)
 	return result;
 }
 
-void CylindricalWarper::backwardWarp(Mat& imageMat,Feature& features)
+void CylindricalWarper::backwardWarp(Mat& imageMat,Feature& features,double focalLength)
 {
+	//focal_pixel = (focal_mm / sensor_width_mm) * image_width_in_pixels
+	radius = (focalLength/35.0)*imageMat.cols;
 	centerX = imageMat.cols/2;
 	centerY = imageMat.rows/2;
 
-	double minX=-1<<20,maxX=1>>20,minY=-1<<20,maxY=1>>20;
+	double minX=1<<20,maxX=-1<<20,minY=1<<20,maxY=-1<<20;
 	for(int i=0;i<imageMat.rows;++i)
 	{
 		for(int j=0;j<imageMat.cols;++j)
@@ -64,16 +69,15 @@ void CylindricalWarper::backwardWarp(Mat& imageMat,Feature& features)
 		}
 	}
 
-	Mat destMat(maxX-minX+0.5,maxY-minY+0.5,CV_8UC3,Scalar(0,0,0));
+	int rows = maxY-minY, cols = maxX-minX;
+	Mat destMat(rows,cols,CV_8UC3,Scalar(0,0,0));
+
 	for(int i=0;i<destMat.rows;++i)
 	{
 		for(int j=0;j<destMat.cols;++j)
 		{
-			Point2d& coord = project_reverse(Point2d(j+minY,i+minX));
-			if(coord.x>=0&&coord.x<=imageMat.rows&&coord.y>=0&&coord.y<=imageMat.cols)
-			{
-				destMat.at<Vec3b>(i,j) = bilinear_interpolate(imageMat,j,i);
-			}
+			Point2d& coord = project_reverse(Point2d(j+minX,i+minY));
+			destMat.at<Vec3b>(i,j) = bilinear_interpolate(imageMat,coord.y,coord.x);
 		}
 	}
 
@@ -82,7 +86,9 @@ void CylindricalWarper::backwardWarp(Mat& imageMat,Feature& features)
 	vector<KeyPoint>& keyPoints = features.keyPoints;
 	for(int i=0,len = keyPoints.size();i<len;++i)
 	{
-		keyPoints[i].pt = project(keyPoints[i].pt);
+		 Point2d coord = project(keyPoints[i].pt);
+		 coord.x = coord.x-minX;
+		 coord.y = coord.y-minY;
+		 keyPoints[i].pt =coord;
 	}
-
 }
