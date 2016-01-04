@@ -2,6 +2,7 @@
 #define __IMAGE_STICH_H__
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <stack>
 #include "util/Util.h"
 #include "feature/Feature.h"
 #include "warp/CylindricalWarper.h"
@@ -28,6 +29,7 @@ private:
 	vector<Mat> imageMats;
 	vector<Feature> features;
 	vector<Mat> homographies;
+	Mat panorama;
 };
 
 

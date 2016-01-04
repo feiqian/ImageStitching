@@ -29,11 +29,11 @@ vector<DMatch> Feature::match(Feature& other)
 
 	for(int i=0;i<matches.size();i++)
 	{
-		if( matches[i].distance <= max(2*min_dist, 0.02))
+		if( matches[i].distance <= 3*min_dist)
 		{ 
 			good_matches.push_back(matches[i]);
 		}
 	}
 
-	return good_matches;
+	return matches;
 }

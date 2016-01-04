@@ -9,7 +9,7 @@ using namespace cv;
 class CylindricalWarper
 {
 public:
-	void backwardWarp(Mat& imageMat,Feature& features,double focalLength);
+	void backwardWarp(Mat& imageMat,double focalLength);
 private:
 	Point2d project(const Point2d& p);
 	Point2d project_reverse(const Point2d& p);

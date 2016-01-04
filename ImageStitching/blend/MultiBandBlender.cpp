@@ -6,27 +6,17 @@ Mat MultiBandBlender::reconstruct(vector<Mat>& laplacianPymid1,vector<Mat>& lapl
 	for(int level= laplacianPymid1.size()-1;level>=0;--level)
 	{
 		int rows =gaussianPymidMask[level].rows,cols = gaussianPymidMask[level].cols;
-		if(destMat.empty()) destMat.create(rows,cols,CV_8UC3);
+		if(destMat.empty())
+		{
+			destMat = Mat::zeros(rows,cols,CV_32FC3);
+		}
 		else 
 		{
 			tempMat = destMat;
 			pyrUp(tempMat,destMat,Size(cols,rows));
 		}
-
-		for(int i=0;i<rows;++i)
-		{
-			for(int j=0;j<cols;++j)
-			{
-				Vec3b& weight = gaussianPymidMask[level].at<Vec3b>(i,j);
-				for(int channel=0;channel<3;++channel)
-				{
-					destMat.at<Vec3b>(i,j)[channel] += laplacianPymid1[level].at<Vec3b>(i,j)[channel]*weight[channel]
-						+laplacianPymid2[level].at<Vec3b>(i,j)[channel]*(1-weight[channel]);
-				}
-			}
-		}
+		destMat+=(laplacianPymid1[level].mul(gaussianPymidMask[level])+laplacianPymid2[level].mul(Scalar(1.0,1.0,1.0) - gaussianPymidMask[level]));
 	}
-
 	return destMat;
 }
 
@@ -62,15 +52,23 @@ Mat MultiBandBlender::blend(Mat& imageMat1,Mat& imageMat2,Mat& mask)
 	assert(imageMat1.rows==imageMat2.rows&&imageMat2.rows==mask.rows);
 	assert(imageMat1.cols==imageMat2.cols&&imageMat2.cols==mask.cols);
 
+	Mat_<Vec3f> leftImage,rightImage;
+	imageMat1.convertTo(leftImage,CV_32F,1.0/255.0);
+	imageMat2.convertTo(rightImage,CV_32F,1.0/255.0);
+
 	vector<Mat> gaussianPymid1,gaussianPymid2,gaussianPymidMask;
 	vector<Mat> laplacianPymid1,laplacianPymid2;
 
-	buildGaussianPyramid(imageMat1,gaussianPymid1);
+	buildGaussianPyramid(leftImage,gaussianPymid1);
 	buildLaplacianPyramid(gaussianPymid1,laplacianPymid1);
-	buildGaussianPyramid(imageMat2,gaussianPymid2);
+	buildGaussianPyramid(rightImage,gaussianPymid2);
 	buildLaplacianPyramid(gaussianPymid2,laplacianPymid2);
 	buildGaussianPyramid(mask,gaussianPymidMask);
 	
-	return reconstruct(laplacianPymid1,laplacianPymid2,gaussianPymidMask);
+	Mat result;
+	Mat& destMat = reconstruct(laplacianPymid1,laplacianPymid2,gaussianPymidMask);
+	destMat.convertTo(result,CV_8UC3,255);
+
+	return result;
 }
 
