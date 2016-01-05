@@ -81,6 +81,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="blend\MultiBandBlender.cpp" />
+    <ClCompile Include="camera\camera.cpp" />
     <ClCompile Include="feature\Feature.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stitch\Sticher.cpp" />
@@ -89,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="blend\MultiBandBlender.h" />
+    <ClInclude Include="camera\camera.h" />
     <ClInclude Include="feature\Feature.h" />
     <ClInclude Include="include\opencv.h" />
     <ClInclude Include="stitch\Sticher.h" />

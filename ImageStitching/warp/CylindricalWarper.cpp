@@ -18,17 +18,16 @@ Point2d CylindricalWarper::project_reverse(const Point2d& p)
 	return coord;
 }
 
-Vec3b CylindricalWarper::bilinear_interpolate(Mat& imageMat, double row, double col)
+Vec3f CylindricalWarper::bilinear_interpolate(Mat& imageMat, double row, double col)
 {
-	Vec3b result(0,0,0);
-	if(row<0||row>imageMat.rows-1||col<0||col>imageMat.cols-1) return result;
-
+	if(row<0||row>imageMat.rows-1||col<0||col>imageMat.cols-1) return Vec3f(-1,-1,-1);
 	if(row==imageMat.rows-1) --row;
 	if(col==imageMat.cols-1) --col;
 
+	Vec3f result(0,0,0);
 	int row1 = floor(row),col1 = floor(col);
 
-	Vec3b color[4];
+	Vec3f color[4];
 	Vec4d weight;
 	double dr = row-row1,dc = col-col1;
 
@@ -37,25 +36,24 @@ Vec3b CylindricalWarper::bilinear_interpolate(Mat& imageMat, double row, double 
 	weight[2] = dr*dc;
 	weight[3] = (1-dr)*dc;
 
-	color[0] = imageMat.at<Vec3b>(row1,col1);
-	color[1] = imageMat.at<Vec3b>(row1+1,col1);
-	color[2] = imageMat.at<Vec3b>(row1+1,col1+1);
-	color[3] = imageMat.at<Vec3b>(row1,col1+1);
+	color[0] = imageMat.at<Vec3f>(row1,col1);
+	color[1] = imageMat.at<Vec3f>(row1+1,col1);
+	color[2] = imageMat.at<Vec3f>(row1+1,col1+1);
+	color[3] = imageMat.at<Vec3f>(row1,col1+1);
 
 	for(int i=0;i<4;++i)
 	{
-		result+=color[i]*weight[i];
+		if(color[i][0]>=0&&color[i][1]>=0&&color[i][2]>=0) result+=color[i]*weight[i];
 	}
 
 	return result;
 }
 
-void CylindricalWarper::backwardWarp(Mat& imageMat,double focalLength)
+void CylindricalWarper::backwardWarp(Mat& imageMat,ImageFeatures& features,Camera& camera)
 {
-	//focal_pixel = (focal_mm / sensor_width_mm) * image_width_in_pixels
-	radius = (37 / 36 )*imageMat.cols;
-	centerX = imageMat.cols/2;
-	centerY = imageMat.rows/2;
+	radius = camera.focal;
+	centerX = camera.ppx;
+	centerY = camera.ppy;
 
 	double minX=1<<20,maxX=-1<<20,minY=1<<20,maxY=-1<<20;
 	for(int i=0;i<imageMat.rows;++i)
@@ -70,17 +68,27 @@ void CylindricalWarper::backwardWarp(Mat& imageMat,double focalLength)
 		}
 	}
 
-	int rows = maxY-minY, cols = maxX-minX;
-	Mat destMat(rows,cols,CV_8UC3,Scalar(0,0,0));
+	int rows = maxY-minY+1, cols = maxX-minX+1;
+	Mat destMat(rows,cols,CV_32FC3,Scalar(-1,-1,-1));
 
 	for(int i=0;i<destMat.rows;++i)
 	{
 		for(int j=0;j<destMat.cols;++j)
 		{
 			Point2d& coord = project_reverse(Point2d(j+minX,i+minY));
-			destMat.at<Vec3b>(i,j) = bilinear_interpolate(imageMat,coord.y,coord.x);
+			destMat.at<Vec3f>(i,j) = bilinear_interpolate(imageMat,coord.y,coord.x);
 		}
 	}
 
 	imageMat = destMat;
+
+	//更正特征关键点坐标
+	vector<KeyPoint>& keyPoints = features.keypoints;
+	for(int i=0,len = keyPoints.size();i<len;++i)
+	{
+		Point2d coord = project(keyPoints[i].pt);
+		coord.x = coord.x-minX;
+		coord.y = coord.y-minY;
+		keyPoints[i].pt =coord;
+	}
 }

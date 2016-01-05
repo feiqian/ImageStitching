@@ -52,23 +52,15 @@ Mat MultiBandBlender::blend(Mat& imageMat1,Mat& imageMat2,Mat& mask)
 	assert(imageMat1.rows==imageMat2.rows&&imageMat2.rows==mask.rows);
 	assert(imageMat1.cols==imageMat2.cols&&imageMat2.cols==mask.cols);
 
-	Mat_<Vec3f> leftImage,rightImage;
-	imageMat1.convertTo(leftImage,CV_32F,1.0/255.0);
-	imageMat2.convertTo(rightImage,CV_32F,1.0/255.0);
-
 	vector<Mat> gaussianPymid1,gaussianPymid2,gaussianPymidMask;
 	vector<Mat> laplacianPymid1,laplacianPymid2;
 
-	buildGaussianPyramid(leftImage,gaussianPymid1);
+	buildGaussianPyramid(imageMat1,gaussianPymid1);
 	buildLaplacianPyramid(gaussianPymid1,laplacianPymid1);
-	buildGaussianPyramid(rightImage,gaussianPymid2);
+	buildGaussianPyramid(imageMat2,gaussianPymid2);
 	buildLaplacianPyramid(gaussianPymid2,laplacianPymid2);
 	buildGaussianPyramid(mask,gaussianPymidMask);
 	
-	Mat result;
-	Mat& destMat = reconstruct(laplacianPymid1,laplacianPymid2,gaussianPymidMask);
-	destMat.convertTo(result,CV_8UC3,255);
-
-	return result;
+	return reconstruct(laplacianPymid1,laplacianPymid2,gaussianPymidMask);
 }
 
