@@ -6,7 +6,9 @@ using namespace cv;
 class MultiBandBlender
 {
 public:
+	MultiBandBlender(){maxLevel = 4;};
 	Mat blend(Mat& imageMat1,Mat& imageMat2,Mat& mask);
+	int maxLevel;
 private:
 	Mat reconstruct(vector<Mat>& laplacianPymid1,vector<Mat>& laplacianPymid2,vector<Mat>& gaussianPymidMask);
 	void buildGaussianPyramid(Mat& imageMat,vector<Mat>& gaussianPymid);

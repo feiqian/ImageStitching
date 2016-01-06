@@ -24,12 +24,14 @@ void MultiBandBlender::buildGaussianPyramid(Mat& imageMat,vector<Mat>& gaussianP
 {
 	Mat currMat = imageMat,tempMat;
 	gaussianPymid.push_back(imageMat);
+	int level = 1;
 
-	while(currMat.rows>=2&&currMat.cols>=2)
+	while(currMat.rows>=2&&currMat.cols>=2&&level<=maxLevel)
 	{
 		pyrDown(currMat,tempMat);
 		gaussianPymid.push_back(tempMat);
 		currMat = tempMat;
+		++level;
 	}
 }
 
@@ -38,9 +40,9 @@ void MultiBandBlender::buildLaplacianPyramid(vector<Mat>& gaussianPymid,vector<M
 	int len=gaussianPymid.size();
 	if(len<=0) return;
 
+	Mat upsampleMat;
 	for(int i=1;i<len;++i)
 	{
-		Mat upsampleMat;
 		pyrUp(gaussianPymid[i],upsampleMat,gaussianPymid[i-1].size());
 		laplacianPymid.push_back(gaussianPymid[i-1]-upsampleMat);
 	}
@@ -60,7 +62,7 @@ Mat MultiBandBlender::blend(Mat& imageMat1,Mat& imageMat2,Mat& mask)
 	buildGaussianPyramid(imageMat2,gaussianPymid2);
 	buildLaplacianPyramid(gaussianPymid2,laplacianPymid2);
 	buildGaussianPyramid(mask,gaussianPymidMask);
-	
+
 	return reconstruct(laplacianPymid1,laplacianPymid2,gaussianPymidMask);
 }
 
